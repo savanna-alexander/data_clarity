@@ -9,6 +9,9 @@ module.exports = async function handler(req, res) {
   }
 
   const { prompt } = req.body;
+  if (!prompt) {
+    return res.status(400).json({ error: 'No prompt provided' });
+  }
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
@@ -21,13 +24,24 @@ module.exports = async function handler(req, res) {
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
-        system: `You are a sharp, senior business analyst. Return ONLY valid JSON: {"type": "2-3 word label", "title": "4-6 word title", "insight": "2-3 sentence insight"}`,
+        system: 'You are a sharp, senior business analyst. Return ONLY valid JSON with no extra text, no markdown, no backticks: {"type": "2-3 word label", "title": "4-6 word title", "insight": "2-3 sentence insight"}',
         messages: [{ role: 'user', content: prompt }],
       }),
     });
 
-    const data = await response.json();
-    return res.status(200).json(data);
+    const text = await response.text();
+    
+    if (!response.ok) {
+      return res.status(response.status).json({ error: text });
+    }
+
+    const data = JSON.parse(text);
+    const raw = data.content?.[0]?.text || '';
+    const cleaned = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+    
+    return res.status(200).json(parsed);
+
   } catch (err) {
     return res.status(500).json({ error: err.message });
   }
