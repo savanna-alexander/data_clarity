@@ -1,22 +1,39 @@
 exports.handler = async function (event) {
-  // Only allow POST
   if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: "Method Not Allowed" };
+    return {
+      statusCode: 405,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ error: "Method Not Allowed" }),
+    };
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     return {
       statusCode: 500,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ error: "API key not configured on server." }),
     };
   }
 
-  let body;
+  let prompt;
   try {
-    body = JSON.parse(event.body);
-  } catch {
-    return { statusCode: 400, body: JSON.stringify({ error: "Invalid request body." }) };
+    const parsed = JSON.parse(event.body);
+    prompt = parsed.prompt;
+  } catch (e) {
+    return {
+      statusCode: 400,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ error: "Invalid request body: " + e.message }),
+    };
+  }
+
+  if (!prompt) {
+    return {
+      statusCode: 400,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ error: "No prompt provided." }),
+    };
   }
 
   try {
@@ -31,28 +48,30 @@ exports.handler = async function (event) {
         model: "claude-sonnet-4-20250514",
         max_tokens: 1000,
         system: `You are a sharp, senior business analyst and data analyst. Analyse the provided dataset and generate a specific, insightful observation. Be direct and precise — no waffle. Return ONLY valid JSON with no extra text: {"type": "insight type label (2-3 words)", "title": "sharp title (4-6 words)", "insight": "2-3 sentence insight with specific observations"}`,
-        messages: [{ role: "user", content: body.prompt }],
+        messages: [{ role: "user", content: prompt }],
       }),
     });
 
-    const data = await response.json();
+    const responseText = await response.text();
 
     if (!response.ok) {
       return {
         statusCode: response.status,
-        body: JSON.stringify({ error: data?.error?.message || "Anthropic API error" }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ error: "Anthropic error: " + responseText }),
       };
     }
 
     return {
       statusCode: 200,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(data),
+      body: responseText,
     };
   } catch (err) {
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: err.message }),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ error: "Function error: " + err.message }),
     };
   }
 };
