@@ -1,4 +1,4 @@
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
@@ -10,21 +10,25 @@ export default async function handler(req, res) {
 
   const { prompt } = req.body;
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
-    },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      system: `You are a sharp, senior business analyst. Return ONLY valid JSON: {"type": "2-3 word label", "title": "4-6 word title", "insight": "2-3 sentence insight"}`,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  });
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: `You are a sharp, senior business analyst. Return ONLY valid JSON: {"type": "2-3 word label", "title": "4-6 word title", "insight": "2-3 sentence insight"}`,
+        messages: [{ role: 'user', content: prompt }],
+      }),
+    });
 
-  const data = await response.json();
-  return res.status(200).json(data);
+    const data = await response.json();
+    return res.status(200).json(data);
+  } catch (err) {
+    return res.status(500).json({ error: err.message });
+  }
 }
