@@ -720,10 +720,8 @@ async function generateInsights() {
         continue;
       }
 
-      const data = JSON.parse(responseText);
-      const raw = data.content?.[0]?.text || '';
-      const cleanText = raw.replace(/```json|```/g,'').trim();
-      const parsed = JSON.parse(cleanText);
+      
+      const parsed = JSON.parse(responseText);
 
       card.innerHTML = `
         <div class="ib-type">${parsed.type}</div>
