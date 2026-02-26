@@ -1,14 +1,3 @@
 [build]
   publish = "."
   functions = "netlify/functions"
-```
-4. Click **Commit changes**
-
-**Step 3 — Check your repo looks like this:**
-```
-netlify/
-  └── functions/
-      └── insights.js
-index.html
-netlify.toml
-README.md
