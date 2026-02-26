@@ -702,7 +702,7 @@ async function generateInsights() {
   for (let i = 0; i < 4; i++) {
     const card = document.getElementById(`ib${i+1}`);
     try {
-      const res = await fetch('/.netlify/functions/insights', {
+      const res = await fetch('/api/insights', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: `${dataContext}\n\n${insightPrompts[i]}` })
